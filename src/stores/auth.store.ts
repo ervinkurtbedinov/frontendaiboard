@@ -21,6 +21,7 @@ type AuthStore = {
 };
 
 let authSubscription: Subscription | null = null;
+const SESSION_TIMEOUT_MS = 8_000;
 
 function getAuthStateFromSession(session: AuthSession | null): Pick<AuthStore, "session" | "user" | "isAuthenticated"> {
   if (!session) {
@@ -56,10 +57,43 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
   isInitializing: true,
   error: null,
   async initializeAuth() {
+    if (!authSubscription) {
+      const { data: listenerData } = supabase.auth.onAuthStateChange((event, session) => {
+        if (!shouldSyncAuthEvent(event)) {
+          return;
+        }
+
+        const nextSession = session ? mapSupabaseSession(session) : null;
+        set({
+          ...getAuthStateFromSession(nextSession),
+          isInitializing: false,
+        });
+      });
+      authSubscription = listenerData.subscription;
+    }
+
     try {
       set({ isInitializing: true, error: null });
 
-      const { data, error } = await supabase.auth.getSession();
+      const sessionResult = await Promise.race([
+        supabase.auth.getSession(),
+        new Promise<never>((_, reject) => {
+          setTimeout(() => {
+            reject(new Error("Session initialization timed out."));
+          }, SESSION_TIMEOUT_MS);
+        }),
+      ]);
+
+      let { data, error } = sessionResult;
+
+      // OAuth implicit flow returns tokens in URL hash; on slow environments parsing can lag a little.
+      if (!data.session && window.location.hash.includes("access_token")) {
+        await new Promise((resolve) => setTimeout(resolve, 250));
+        const retrySession = await supabase.auth.getSession();
+        data = retrySession.data;
+        error = retrySession.error;
+      }
+
       if (error) {
         set({
           ...getAuthStateFromSession(null),
@@ -74,21 +108,6 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
         ...getAuthStateFromSession(mappedSession),
         isInitializing: false,
       });
-
-      if (!authSubscription) {
-        const { data: listenerData } = supabase.auth.onAuthStateChange((event, session) => {
-          if (!shouldSyncAuthEvent(event)) {
-            return;
-          }
-
-          const nextSession = session ? mapSupabaseSession(session) : null;
-          set({
-            ...getAuthStateFromSession(nextSession),
-            isInitializing: false,
-          });
-        });
-        authSubscription = listenerData.subscription;
-      }
     } catch {
       set({
         ...getAuthStateFromSession(null),
