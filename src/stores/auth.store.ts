@@ -1,7 +1,6 @@
 import { create } from "zustand";
 import { authService } from "@/services";
 import { supabase } from "@/lib";
-import { mapSupabaseSession } from "@/services/auth.service";
 import type { AuthSession, LoginInput, RegisterInput, User } from "@/types";
 import type { AuthChangeEvent, Subscription } from "@supabase/supabase-js";
 
@@ -58,12 +57,12 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
   error: null,
   async initializeAuth() {
     if (!authSubscription) {
-      const { data: listenerData } = supabase.auth.onAuthStateChange((event, session) => {
+      const { data: listenerData } = supabase.auth.onAuthStateChange(async (event, session) => {
         if (!shouldSyncAuthEvent(event)) {
           return;
         }
 
-        const nextSession = session ? mapSupabaseSession(session) : null;
+        const nextSession = session ? await authService.hydrateSession(session) : null;
         set({
           ...getAuthStateFromSession(nextSession),
           isInitializing: false,
@@ -103,7 +102,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
         return;
       }
 
-      const mappedSession = data.session ? mapSupabaseSession(data.session) : null;
+      const mappedSession = data.session ? await authService.hydrateSession(data.session) : null;
       set({
         ...getAuthStateFromSession(mappedSession),
         isInitializing: false,

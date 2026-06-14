@@ -4,6 +4,7 @@ export type User = {
   fullName: string;
   avatarUrl?: string;
   isPremium: boolean;
+  teamRole?: string;
 };
 
 export type AuthSession = {
