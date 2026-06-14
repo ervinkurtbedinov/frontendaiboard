@@ -1,0 +1,49 @@
+import type { Task } from "@/types";
+
+export const mockTasks: Task[] = [
+  {
+    id: "task_1",
+    title: "Define launch scope",
+    description: "Finalize scope for MVP with product and design.",
+    status: "backlog",
+    priority: "high",
+    assigneeId: "user_1",
+    createdAt: "2026-06-10T09:00:00.000Z",
+  },
+  {
+    id: "task_2",
+    title: "Create onboarding wireframes",
+    description: "Design first-run experience for new users.",
+    status: "todo",
+    priority: "medium",
+    assigneeId: "user_1",
+    createdAt: "2026-06-10T10:00:00.000Z",
+  },
+  {
+    id: "task_3",
+    title: "Implement board shell",
+    description: "Set up board layout, columns, and navigation shell.",
+    status: "in_progress",
+    priority: "high",
+    assigneeId: "user_1",
+    createdAt: "2026-06-10T11:00:00.000Z",
+  },
+  {
+    id: "task_4",
+    title: "Review edge cases",
+    description: "Check loading and error states for all feature pages.",
+    status: "review",
+    priority: "medium",
+    assigneeId: "user_1",
+    createdAt: "2026-06-10T12:00:00.000Z",
+  },
+  {
+    id: "task_5",
+    title: "Prepare release notes",
+    description: "Draft first milestone release notes for stakeholders.",
+    status: "done",
+    priority: "low",
+    assigneeId: "user_1",
+    createdAt: "2026-06-10T13:00:00.000Z",
+  },
+];
