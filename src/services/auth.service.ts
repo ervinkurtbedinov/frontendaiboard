@@ -3,15 +3,22 @@ import { supabase } from "@/lib/supabase";
 import type { User as SupabaseUser, Session as SupabaseSession } from "@supabase/supabase-js";
 
 function mapSupabaseUser(user: SupabaseUser): AuthSession["user"] {
+  const metadata = user.user_metadata && typeof user.user_metadata === "object" ? user.user_metadata : {};
+  const fullNameFromMetadata =
+    (typeof metadata.fullName === "string" && metadata.fullName) ||
+    (typeof metadata.full_name === "string" && metadata.full_name) ||
+    (typeof metadata.name === "string" && metadata.name);
+
+  const avatarFromMetadata =
+    (typeof metadata.avatar_url === "string" && metadata.avatar_url) ||
+    (typeof metadata.picture === "string" && metadata.picture);
+
   return {
     id: user.id,
     email: user.email ?? "",
-    fullName:
-      (typeof user.user_metadata.fullName === "string" && user.user_metadata.fullName) ||
-      (typeof user.user_metadata.full_name === "string" && user.user_metadata.full_name) ||
-      (user.email?.split("@")[0] ?? "User"),
-    avatarUrl: typeof user.user_metadata.avatar_url === "string" ? user.user_metadata.avatar_url : undefined,
-    isPremium: Boolean(user.user_metadata.is_premium),
+    fullName: fullNameFromMetadata || (user.email?.split("@")[0] ?? "User"),
+    avatarUrl: avatarFromMetadata || undefined,
+    isPremium: Boolean(metadata.is_premium),
   };
 }
 
