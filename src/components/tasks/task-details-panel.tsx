@@ -1,11 +1,16 @@
 import { Badge, Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui";
-import type { Task } from "@/types";
+import type { BoardMember, Task } from "@/types";
 
 type TaskDetailsPanelProps = {
   task: Task | null;
+  members: BoardMember[];
 };
 
-export function TaskDetailsPanel({ task }: TaskDetailsPanelProps): JSX.Element {
+function memberDisplayName(member: BoardMember): string {
+  return member.fullName.trim() || member.email;
+}
+
+export function TaskDetailsPanel({ task, members }: TaskDetailsPanelProps): JSX.Element {
   if (!task) {
     return (
       <Card>
@@ -16,6 +21,12 @@ export function TaskDetailsPanel({ task }: TaskDetailsPanelProps): JSX.Element {
       </Card>
     );
   }
+
+  const assigneeIds = task.assigneeIds?.length ? task.assigneeIds : task.assigneeId ? [task.assigneeId] : [];
+  const assigneeNames = assigneeIds
+    .map((assigneeId) => members.find((member) => member.id === assigneeId))
+    .filter((member): member is BoardMember => Boolean(member))
+    .map(memberDisplayName);
 
   return (
     <Card>
@@ -28,6 +39,7 @@ export function TaskDetailsPanel({ task }: TaskDetailsPanelProps): JSX.Element {
       </CardHeader>
       <CardContent className="space-y-3 text-sm">
         <p>{task.description}</p>
+        <p className="text-muted-foreground">Assignees: {assigneeNames.length ? assigneeNames.join(", ") : "Unassigned"}</p>
         <p className="text-muted-foreground">Created: {new Date(task.createdAt).toLocaleString()}</p>
       </CardContent>
     </Card>
