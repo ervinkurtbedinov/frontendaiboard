@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { boardsService, tasksService } from "@/services";
-import type { Board, BoardColumn, Task } from "@/types";
+import type { Board, BoardColumn, CreateBoardInput, Task } from "@/types";
 
 type BoardStore = {
   boards: Board[];
@@ -11,6 +11,7 @@ type BoardStore = {
   error: string | null;
   loadBoards: () => Promise<void>;
   selectBoard: (boardId: string) => Promise<void>;
+  createBoard: (input: CreateBoardInput) => Promise<void>;
 };
 
 export const useBoardStore = create<BoardStore>((set) => ({
@@ -52,5 +53,20 @@ export const useBoardStore = create<BoardStore>((set) => ({
       boardTasks: tasksResponse.data,
       isLoading: false,
     });
+  },
+  async createBoard(input) {
+    const timestamp = new Date().toISOString();
+    const newBoard: Board = {
+      id: crypto.randomUUID(),
+      name: input.name,
+      description: "New board",
+      memberIds: input.memberIds,
+      createdAt: timestamp,
+      updatedAt: timestamp,
+    };
+
+    set((state) => ({
+      boards: [newBoard, ...state.boards],
+    }));
   },
 }));

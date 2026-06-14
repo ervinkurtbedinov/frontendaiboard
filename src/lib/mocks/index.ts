@@ -5,3 +5,4 @@ export * from "@/lib/mocks/ai.mock";
 export * from "@/lib/mocks/telegram.mock";
 export * from "@/lib/mocks/chat.mock";
 export * from "@/lib/mocks/billing.mock";
+export * from "@/lib/mocks/team.mock";

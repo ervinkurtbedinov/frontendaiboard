@@ -10,6 +10,12 @@ export type Board = {
   id: string;
   name: string;
   description: string;
+  memberIds: string[];
   createdAt: string;
   updatedAt: string;
+};
+
+export type CreateBoardInput = {
+  name: string;
+  memberIds: string[];
 };

@@ -1,14 +1,36 @@
-import { useEffect } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, EmptyState, ErrorState, Skeleton } from "@/components/ui";
-import { useBoardStore } from "@/stores";
+import { CreateBoardModal } from "@/components/board";
+import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle, EmptyState, ErrorState, Skeleton } from "@/components/ui";
+import { mockTeamMembers } from "@/lib/mocks";
+import { useAuthStore, useBoardStore } from "@/stores";
 
 export function BoardsListPage(): JSX.Element {
-  const { boards, isLoading, error, loadBoards } = useBoardStore();
+  const [createOpen, setCreateOpen] = useState(false);
+  const currentUser = useAuthStore((state) => state.user);
+  const { boards, isLoading, error, loadBoards, createBoard } = useBoardStore();
+
+  const initialMemberIds = useMemo(() => {
+    if (!currentUser) {
+      return [];
+    }
+
+    return [currentUser.id];
+  }, [currentUser]);
 
   useEffect(() => {
     void loadBoards();
   }, [loadBoards]);
+
+  const handleCreateBoard = async (values: { name: string; memberIds: string[] }) => {
+    await createBoard(values);
+  };
+
+  const createBoardButton = (
+    <Button onClick={() => setCreateOpen(true)} type="button">
+      Create Board
+    </Button>
+  );
 
   if (isLoading) {
     return (
@@ -24,12 +46,30 @@ export function BoardsListPage(): JSX.Element {
   }
 
   if (boards.length === 0) {
-    return <EmptyState title="No boards yet" description="Create your first board to start planning tasks." />;
+    return (
+      <>
+        <EmptyState
+          title="No boards yet"
+          description="Create your first board to start planning tasks."
+          action={createBoardButton}
+        />
+        <CreateBoardModal
+          open={createOpen}
+          onOpenChange={setCreateOpen}
+          onSubmitBoard={handleCreateBoard}
+          teamMembers={mockTeamMembers}
+          initialMemberIds={initialMemberIds}
+        />
+      </>
+    );
   }
 
   return (
     <section className="space-y-4">
-      <h2 className="text-2xl font-semibold">Boards</h2>
+      <div className="flex items-center justify-between gap-4">
+        <h2 className="text-2xl font-semibold">Boards</h2>
+        {createBoardButton}
+      </div>
       <div className="grid gap-4 md:grid-cols-2">
         {boards.map((board) => (
           <Card key={board.id}>
@@ -45,6 +85,13 @@ export function BoardsListPage(): JSX.Element {
           </Card>
         ))}
       </div>
+      <CreateBoardModal
+        open={createOpen}
+        onOpenChange={setCreateOpen}
+        onSubmitBoard={handleCreateBoard}
+        teamMembers={mockTeamMembers}
+        initialMemberIds={initialMemberIds}
+      />
     </section>
   );
 }
