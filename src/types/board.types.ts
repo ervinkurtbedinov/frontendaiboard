@@ -15,6 +15,14 @@ export type Board = {
   updatedAt: string;
 };
 
+export type BoardMember = {
+  id: string;
+  email: string;
+  fullName: string;
+  teamRole?: string;
+  avatarUrl?: string;
+};
+
 export type CreateBoardInput = {
   name: string;
   memberIds: string[];

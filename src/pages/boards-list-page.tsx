@@ -2,7 +2,6 @@ import { useMemo, useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { CreateBoardModal } from "@/components/board";
 import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle, EmptyState, ErrorState, Skeleton } from "@/components/ui";
-import { mockTeamMembers } from "@/lib/mocks";
 import { useAuthStore, useBoardStore } from "@/stores";
 
 export function BoardsListPage(): JSX.Element {
@@ -10,13 +9,7 @@ export function BoardsListPage(): JSX.Element {
   const currentUser = useAuthStore((state) => state.user);
   const { boards, isLoading, error, loadBoards, createBoard } = useBoardStore();
 
-  const initialMemberIds = useMemo(() => {
-    if (!currentUser) {
-      return [];
-    }
-
-    return [currentUser.id];
-  }, [currentUser]);
+  const canOpenCreateModal = useMemo(() => Boolean(currentUser), [currentUser]);
 
   useEffect(() => {
     void loadBoards();
@@ -27,7 +20,7 @@ export function BoardsListPage(): JSX.Element {
   };
 
   const createBoardButton = (
-    <Button onClick={() => setCreateOpen(true)} type="button">
+    <Button onClick={() => setCreateOpen(true)} type="button" disabled={!canOpenCreateModal}>
       Create Board
     </Button>
   );
@@ -54,11 +47,10 @@ export function BoardsListPage(): JSX.Element {
           action={createBoardButton}
         />
         <CreateBoardModal
-          open={createOpen}
+          open={createOpen && Boolean(currentUser)}
           onOpenChange={setCreateOpen}
           onSubmitBoard={handleCreateBoard}
-          teamMembers={mockTeamMembers}
-          initialMemberIds={initialMemberIds}
+          currentUser={currentUser}
         />
       </>
     );
@@ -86,11 +78,10 @@ export function BoardsListPage(): JSX.Element {
         ))}
       </div>
       <CreateBoardModal
-        open={createOpen}
+        open={createOpen && Boolean(currentUser)}
         onOpenChange={setCreateOpen}
         onSubmitBoard={handleCreateBoard}
-        teamMembers={mockTeamMembers}
-        initialMemberIds={initialMemberIds}
+        currentUser={currentUser}
       />
     </section>
   );

@@ -9,7 +9,7 @@ type TaskStore = {
   error: string | null;
   setTasks: (tasks: Task[]) => void;
   selectTask: (task: Task | null) => void;
-  createTask: (task: Omit<Task, "id" | "createdAt">) => Promise<void>;
+  createTask: (task: Omit<Task, "id" | "createdAt" | "updatedAt">) => Promise<void>;
   moveTask: (taskId: string, status: TaskStatus) => Promise<void>;
 };
 
