@@ -9,6 +9,7 @@ export const registerSchema = z
   .object({
     fullName: z.string().min(2),
     email: z.string().email(),
+    role: z.string().min(1, "Role is required"),
     password: z.string().min(6),
     confirmPassword: z.string().min(6),
   })

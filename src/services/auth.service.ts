@@ -67,6 +67,8 @@ export const authService = {
         data: {
           fullName: input.fullName,
           full_name: input.fullName,
+          role: input.role,
+          team_role: input.role,
         },
       },
     });

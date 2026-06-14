@@ -20,5 +20,6 @@ export type LoginInput = {
 export type RegisterInput = {
   fullName: string;
   email: string;
+  role: string;
   password: string;
 };
