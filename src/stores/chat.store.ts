@@ -1,22 +1,28 @@
 import { create } from "zustand";
 import { aiService } from "@/services";
 import { mockChatMessages, mockChatThreads } from "@/lib/mocks";
-import type { ChatMessage, ChatThread } from "@/types";
+import type { ChatMessage, ChatThread, TaskAssignment } from "@/types";
 
 type ChatStore = {
   threads: ChatThread[];
   activeThreadId: string | null;
   messages: ChatMessage[];
+  assignments: TaskAssignment[];
+  lastPrompt: string | null;
   isLoading: boolean;
   error: string | null;
   setActiveThread: (threadId: string) => void;
   sendMessage: (content: string) => Promise<void>;
+  generateAssignments: (message: string, boardId: string) => Promise<boolean>;
+  clearAssignments: () => void;
 };
 
 export const useChatStore = create<ChatStore>((set, get) => ({
   threads: mockChatThreads,
   activeThreadId: mockChatThreads[0]?.id ?? null,
   messages: mockChatMessages,
+  assignments: [],
+  lastPrompt: null,
   isLoading: false,
   error: null,
   setActiveThread(threadId) {
@@ -53,5 +59,28 @@ export const useChatStore = create<ChatStore>((set, get) => ({
       createdAt: response.data.createdAt,
     };
     set((state) => ({ messages: [...state.messages, assistantMessage], isLoading: false }));
+  },
+  async generateAssignments(message, boardId) {
+    if (!boardId) {
+      set({ error: "Open a board first to generate tasks.", isLoading: false });
+      return false;
+    }
+
+    set({ isLoading: true, error: null });
+    const response = await aiService.generateTaskAssignments(message, boardId);
+    if (response.error || !response.data) {
+      set({ error: response.error ?? "Failed to generate assignments.", isLoading: false });
+      return false;
+    }
+
+    set({
+      assignments: response.data,
+      lastPrompt: message,
+      isLoading: false,
+    });
+    return true;
+  },
+  clearAssignments() {
+    set({ assignments: [], lastPrompt: null, error: null });
   },
 }));

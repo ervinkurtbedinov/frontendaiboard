@@ -1,5 +1,6 @@
 import { NavLink, Outlet } from "react-router-dom";
 import { Moon, Sun } from "lucide-react";
+import { LiveChatWidget } from "@/components/chat";
 import { Button } from "@/components/ui";
 import { useTheme } from "@/hooks";
 import { useAuthStore } from "@/stores";
@@ -57,6 +58,7 @@ export function AppLayout(): JSX.Element {
           <Outlet />
         </main>
       </div>
+      <LiveChatWidget />
     </div>
   );
 }

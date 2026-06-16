@@ -11,7 +11,7 @@ type TaskStore = {
   error: string | null;
   setTasks: (tasks: Task[]) => void;
   selectTask: (task: Task | null) => void;
-  createTask: (task: Omit<Task, "id" | "createdAt" | "updatedAt">) => Promise<void>;
+  createTask: (task: Omit<Task, "id" | "createdAt" | "updatedAt">) => Promise<boolean>;
   updateTask: (taskId: string, patch: TaskPatch) => void;
   deleteTask: (taskId: string) => void;
   addTaskAssignee: (taskId: string, assigneeId: string) => void;
@@ -35,17 +35,18 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
     const response = await tasksService.createTask(task);
     if (response.error) {
       set({ error: response.error, isLoading: false });
-      return;
+      return false;
     }
     if (!response.data) {
       set({ error: "Empty created task response", isLoading: false });
-      return;
+      return false;
     }
     const normalizedTask: Task = {
       ...response.data,
       assigneeIds: response.data.assigneeIds ?? (response.data.assigneeId ? [response.data.assigneeId] : []),
     };
     set({ tasks: [normalizedTask, ...get().tasks], isLoading: false });
+    return true;
   },
   updateTask(taskId, patch) {
     set((state) => {
