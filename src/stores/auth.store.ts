@@ -16,6 +16,9 @@ type AuthStore = {
   loginWithGoogle: () => Promise<void>;
   login: (input: LoginInput) => Promise<void>;
   register: (input: RegisterInput) => Promise<void>;
+  updateProfileSettings: (input: { teamRole: string; telegramUsername: string }) => Promise<boolean>;
+  generateTelegramLinkToken: () => Promise<string | null>;
+  syncProfileFromDatabase: () => Promise<void>;
   logout: () => Promise<void>;
 };
 
@@ -178,6 +181,97 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       });
     } catch {
       set({ error: "Registration failed. Please try again.", isLoading: false });
+    }
+  },
+  async updateProfileSettings(input) {
+    const currentUser = get().user;
+    if (!currentUser) {
+      set({ error: "You must be logged in to update profile settings." });
+      return false;
+    }
+
+    try {
+      set({ isLoading: true, error: null });
+
+      const response = await authService.updateProfileSettings({
+        userId: currentUser.id,
+        teamRole: input.teamRole,
+        telegramUsername: input.telegramUsername,
+      });
+
+      if (response.error || !response.data) {
+        set({ isLoading: false, error: response.error ?? "Failed to update profile settings." });
+        return false;
+      }
+
+      const nextUser: User = {
+        ...currentUser,
+        teamRole: response.data.teamRole,
+        telegramUsername: response.data.telegramUsername,
+      };
+
+      const session = get().session;
+      set({
+        user: nextUser,
+        session: session ? { ...session, user: nextUser } : null,
+        isLoading: false,
+      });
+
+      return true;
+    } catch {
+      set({ error: "Failed to update profile settings.", isLoading: false });
+      return false;
+    }
+  },
+  async generateTelegramLinkToken() {
+    const currentUser = get().user;
+    if (!currentUser) {
+      set({ error: "You must be logged in to connect Telegram." });
+      return null;
+    }
+
+    try {
+      set({ isLoading: true, error: null });
+
+      const response = await authService.generateTelegramLinkToken(currentUser.id);
+      if (response.error || !response.data) {
+        set({ isLoading: false, error: response.error ?? "Failed to generate Telegram link." });
+        return null;
+      }
+
+      const nextUser: User = {
+        ...currentUser,
+        telegramLinkToken: response.data.telegramLinkToken,
+      };
+
+      const session = get().session;
+      set({
+        user: nextUser,
+        session: session ? { ...session, user: nextUser } : null,
+        isLoading: false,
+      });
+
+      return response.data.telegramLinkToken;
+    } catch {
+      set({ error: "Failed to generate Telegram link.", isLoading: false });
+      return null;
+    }
+  },
+  async syncProfileFromDatabase() {
+    const currentSession = await supabase.auth.getSession();
+    const supabaseSession = currentSession.data.session;
+    if (!supabaseSession) {
+      return;
+    }
+
+    try {
+      const nextSession = await authService.hydrateSession(supabaseSession);
+      set({
+        user: nextSession.user,
+        session: nextSession,
+      });
+    } catch {
+      // Keep existing user snapshot if hydration fails.
     }
   },
   async logout() {

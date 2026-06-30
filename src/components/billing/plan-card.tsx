@@ -1,13 +1,15 @@
 import { Badge, Button, Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui";
+import { PLAN_FEATURES, PLAN_SUBTITLES } from "@/lib/constants/billing-plans";
 import type { BillingPlan } from "@/types";
 
 type PlanCardProps = {
   plan: BillingPlan;
   activePlan: BillingPlan;
+  isLoading?: boolean;
   onUpgrade: (plan: Exclude<BillingPlan, "free">) => Promise<void>;
 };
 
-export function PlanCard({ plan, activePlan, onUpgrade }: PlanCardProps): JSX.Element {
+export function PlanCard({ plan, activePlan, isLoading = false, onUpgrade }: PlanCardProps): JSX.Element {
   const isActive = plan === activePlan;
   const isUpgradeablePlan = plan === "pro" || plan === "team";
 
@@ -18,22 +20,26 @@ export function PlanCard({ plan, activePlan, onUpgrade }: PlanCardProps): JSX.El
           <CardTitle className="capitalize">{plan}</CardTitle>
           {isActive ? <Badge>Current</Badge> : null}
         </div>
-        <CardDescription>Mocked plan card for billing skeleton.</CardDescription>
+        <CardDescription>{PLAN_SUBTITLES[plan]}</CardDescription>
       </CardHeader>
-      <CardContent className="text-sm text-muted-foreground">
-        {plan === "free" ? "Up to 3 AI generations per month." : "Unlimited generations and team collaboration options."}
+      <CardContent>
+        <ul className="list-inside list-disc space-y-1 text-sm text-muted-foreground">
+          {PLAN_FEATURES[plan].map((feature) => (
+            <li key={feature}>{feature}</li>
+          ))}
+        </ul>
       </CardContent>
       <CardFooter>
         <Button
           variant={isActive ? "secondary" : "default"}
-          disabled={!isUpgradeablePlan || isActive}
+          disabled={!isUpgradeablePlan || isActive || isLoading}
           onClick={() => {
             if (isUpgradeablePlan) {
               void onUpgrade(plan);
             }
           }}
         >
-          {isActive ? "Active plan" : "Upgrade"}
+          {isLoading ? "Redirecting..." : isActive ? "Active plan" : "Upgrade"}
         </Button>
       </CardFooter>
     </Card>

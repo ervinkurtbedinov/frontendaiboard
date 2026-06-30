@@ -1,4 +1,4 @@
-import type { ApiResponse, AuthSession, LoginInput, RegisterInput } from "@/types";
+import type { ApiResponse, AuthSession, LoginInput, RegisterInput, UpdateProfileSettingsInput } from "@/types";
 import { supabase } from "@/lib/supabase";
 import type { User as SupabaseUser, Session as SupabaseSession } from "@supabase/supabase-js";
 
@@ -7,6 +7,11 @@ type ProfileRow = {
   email: string | null;
   full_name: string | null;
   team_role: string | null;
+  telegram_username: string | null;
+  telegram_chat_id: number | null;
+  telegram_notifications_enabled: boolean | null;
+  telegram_linked_at: string | null;
+  telegram_link_token: string | null;
   is_premium: boolean | null;
 };
 
@@ -31,6 +36,13 @@ function mapSupabaseUser(user: SupabaseUser): AuthSession["user"] {
       (typeof metadata.team_role === "string" && metadata.team_role) ||
       (typeof metadata.role === "string" && metadata.role) ||
       undefined,
+    telegramUsername:
+      (typeof metadata.telegram_username === "string" && metadata.telegram_username) ||
+      (typeof metadata.telegramUsername === "string" && metadata.telegramUsername) ||
+      undefined,
+    telegramNotificationsEnabled:
+      (typeof metadata.telegram_notifications_enabled === "boolean" && metadata.telegram_notifications_enabled) ||
+      undefined,
   };
 }
 
@@ -45,7 +57,9 @@ export function mapSupabaseSession(session: SupabaseSession): AuthSession {
 async function getProfileByUserId(userId: string): Promise<ProfileRow | null> {
   const { data, error } = await supabase
     .from("profiles")
-    .select("id, email, full_name, team_role, is_premium")
+    .select(
+      "id, email, full_name, team_role, telegram_username, telegram_chat_id, telegram_notifications_enabled, telegram_linked_at, telegram_link_token, is_premium",
+    )
     .eq("id", userId)
     .maybeSingle();
 
@@ -70,6 +84,11 @@ function mergeSessionWithProfile(session: SupabaseSession, profile: ProfileRow |
       fullName: profile.full_name ?? mapped.user.fullName,
       isPremium: profile.is_premium ?? mapped.user.isPremium,
       teamRole: profile.team_role ?? mapped.user.teamRole,
+      telegramUsername: profile.telegram_username ?? mapped.user.telegramUsername,
+      telegramChatId: profile.telegram_chat_id ?? mapped.user.telegramChatId,
+      telegramNotificationsEnabled: profile.telegram_notifications_enabled ?? mapped.user.telegramNotificationsEnabled,
+      telegramLinkedAt: profile.telegram_linked_at ?? mapped.user.telegramLinkedAt,
+      telegramLinkToken: profile.telegram_link_token ?? mapped.user.telegramLinkToken,
     },
   };
 }
@@ -134,6 +153,54 @@ export const authService = {
   async hydrateSession(session: SupabaseSession): Promise<AuthSession> {
     const profile = await getProfileByUserId(session.user.id);
     return mergeSessionWithProfile(session, profile);
+  },
+
+  async updateProfileSettings(input: UpdateProfileSettingsInput): Promise<ApiResponse<Pick<AuthSession["user"], "teamRole" | "telegramUsername">>> {
+    const teamRole = input.teamRole.trim();
+    const telegramUsername = input.telegramUsername.trim();
+
+    const { data, error } = await supabase
+      .from("profiles")
+      .update({
+        team_role: teamRole.length > 0 ? teamRole : null,
+        telegram_username: telegramUsername.length > 0 ? telegramUsername : null,
+      })
+      .eq("id", input.userId)
+      .select("team_role, telegram_username")
+      .single();
+
+    if (error) {
+      return { data: null, error: error.message };
+    }
+
+    return {
+      data: {
+        teamRole: data.team_role ?? undefined,
+        telegramUsername: data.telegram_username ?? undefined,
+      },
+      error: null,
+    };
+  },
+
+  async generateTelegramLinkToken(userId: string): Promise<ApiResponse<{ telegramLinkToken: string }>> {
+    const nextToken = crypto.randomUUID().replaceAll("-", "");
+    const { data, error } = await supabase
+      .from("profiles")
+      .update({
+        telegram_link_token: nextToken,
+      })
+      .eq("id", userId)
+      .select("telegram_link_token")
+      .single();
+
+    if (error || !data.telegram_link_token) {
+      return { data: null, error: error?.message ?? "Failed to generate Telegram link token." };
+    }
+
+    return {
+      data: { telegramLinkToken: data.telegram_link_token },
+      error: null,
+    };
   },
 
   async forgotPassword(email: string): Promise<ApiResponse<{ ok: boolean }>> {
