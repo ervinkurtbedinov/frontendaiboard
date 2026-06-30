@@ -5,6 +5,11 @@ export type User = {
   avatarUrl?: string;
   isPremium: boolean;
   teamRole?: string;
+  telegramUsername?: string;
+  telegramChatId?: number;
+  telegramNotificationsEnabled?: boolean;
+  telegramLinkedAt?: string;
+  telegramLinkToken?: string;
 };
 
 export type AuthSession = {
@@ -23,4 +28,10 @@ export type RegisterInput = {
   email: string;
   role: string;
   password: string;
+};
+
+export type UpdateProfileSettingsInput = {
+  userId: string;
+  teamRole: string;
+  telegramUsername: string;
 };

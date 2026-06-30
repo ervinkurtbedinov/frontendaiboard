@@ -11,6 +11,7 @@ export type Task = {
   status: TaskStatus;
   priority: TaskPriority;
   assigneeId?: string;
+  assigneeIds?: string[];
   createdBy?: string;
   createdAt: string;
   updatedAt: string;

@@ -25,7 +25,8 @@ function memberDisplayName(member: BoardMember): string {
 export function BoardDetailsPage(): JSX.Element {
   const { id } = useParams<{ id: string }>();
   const { columns, boardTasks, selectedBoard, boardMembers, isLoading, error, selectBoard, loadBoards, loadBoardDetails } = useBoardStore();
-  const { tasks, setTasks, createTask, selectedTask, selectTask } = useTaskStore();
+  const { tasks, setTasks, createTask, updateTask, deleteTask, addTaskAssignee, removeTaskAssignee, selectedTask, selectTask } =
+    useTaskStore();
   const [createOpen, setCreateOpen] = useState(false);
   const [taskModalOpen, setTaskModalOpen] = useState(false);
 
@@ -35,12 +36,24 @@ export function BoardDetailsPage(): JSX.Element {
 
   useEffect(() => {
     if (!id) return;
-    void loadBoardDetails(id);
-    void selectBoard(id);
+
+    void (async () => {
+      await loadBoardDetails(id);
+      const { error, selectedBoard } = useBoardStore.getState();
+      if (error || !selectedBoard) {
+        return;
+      }
+      await selectBoard(id);
+    })();
   }, [id, loadBoardDetails, selectBoard]);
 
   useEffect(() => {
-    setTasks(boardTasks);
+    setTasks(
+      boardTasks.map((task) => ({
+        ...task,
+        assigneeIds: task.assigneeIds ?? (task.assigneeId ? [task.assigneeId] : []),
+      })),
+    );
   }, [boardTasks, setTasks]);
 
   const groupedTasks = useMemo(() => tasks, [tasks]);
@@ -106,8 +119,8 @@ export function BoardDetailsPage(): JSX.Element {
         </div>
         <Button onClick={() => setCreateOpen(true)}>Create Task</Button>
       </div>
-      <BoardGrid columns={columns} tasks={groupedTasks} onTaskClick={handleTaskClick} />
-      <TaskDetailsPanel task={selectedTask} />
+      <BoardGrid columns={columns} tasks={groupedTasks} members={boardMembers} onTaskClick={handleTaskClick} />
+      <TaskDetailsPanel task={selectedTask} members={boardMembers} />
       <CreateTaskModal
         open={createOpen}
         members={boardMembers}
@@ -127,7 +140,21 @@ export function BoardDetailsPage(): JSX.Element {
           });
         }}
       />
-      <TaskModal task={selectedTask} open={taskModalOpen} onOpenChange={setTaskModalOpen} />
+      <TaskModal
+        task={selectedTask}
+        members={boardMembers}
+        open={taskModalOpen}
+        onOpenChange={(open) => {
+          setTaskModalOpen(open);
+          if (!open) {
+            selectTask(null);
+          }
+        }}
+        onUpdateTask={updateTask}
+        onAddAssignee={addTaskAssignee}
+        onRemoveAssignee={removeTaskAssignee}
+        onDeleteTask={deleteTask}
+      />
     </section>
   );
 }

@@ -19,3 +19,20 @@ export type AIChatMessage = {
   content: string;
   createdAt: string;
 };
+
+export type TaskAssignmentAssignee = {
+  id: string;
+  full_name: string;
+  team_role: string | null;
+};
+
+export type TaskAssignment = {
+  task: string;
+  assignee: TaskAssignmentAssignee;
+  task_id: string;
+};
+
+export type TaskAssignmentRequest = {
+  message: string;
+  board_id: string;
+};
