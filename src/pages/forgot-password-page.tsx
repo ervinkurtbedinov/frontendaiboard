@@ -21,6 +21,9 @@ export function ForgotPasswordPage(): JSX.Element {
   return (
     <form className="space-y-4" onSubmit={onSubmit}>
       <Input placeholder="Email" {...form.register("email")} />
+      {form.formState.errors.email?.message ? (
+        <p className="text-xs text-destructive">{form.formState.errors.email.message}</p>
+      ) : null}
       <Button type="submit" className="w-full">
         Send reset link
       </Button>

@@ -36,8 +36,15 @@ export function BoardDetailsPage(): JSX.Element {
 
   useEffect(() => {
     if (!id) return;
-    void loadBoardDetails(id);
-    void selectBoard(id);
+
+    void (async () => {
+      await loadBoardDetails(id);
+      const { error, selectedBoard } = useBoardStore.getState();
+      if (error || !selectedBoard) {
+        return;
+      }
+      await selectBoard(id);
+    })();
   }, [id, loadBoardDetails, selectBoard]);
 
   useEffect(() => {

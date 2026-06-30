@@ -46,17 +46,24 @@ export const useBoardStore = create<BoardStore>((set) => ({
   async loadBoardDetails(boardId) {
     set({ isLoading: true, error: null, selectedBoardId: boardId });
 
-    const [boardResponse, membersResponse] = await Promise.all([
-      boardsService.getBoardById(boardId),
-      boardsService.getBoardMembers(boardId),
-    ]);
-
-    if (boardResponse.error || membersResponse.error) {
-      set({ error: boardResponse.error ?? membersResponse.error, isLoading: false });
+    const boardResponse = await boardsService.getBoardById(boardId);
+    if (boardResponse.error) {
+      set({ error: boardResponse.error, isLoading: false });
+      return;
+    }
+    if (!boardResponse.data) {
+      set({ error: "Board was not found", isLoading: false });
       return;
     }
 
-    if (!boardResponse.data || !membersResponse.data) {
+    const membersResponse = await boardsService.getBoardMembers(boardId);
+
+    if (membersResponse.error) {
+      set({ error: membersResponse.error, isLoading: false });
+      return;
+    }
+
+    if (!membersResponse.data) {
       set({ error: "Board was not found", isLoading: false });
       return;
     }
@@ -73,23 +80,21 @@ export const useBoardStore = create<BoardStore>((set) => ({
   },
   async selectBoard(boardId) {
     set((state) => ({
-      isLoading: true,
       error: null,
       selectedBoardId: boardId,
       selectedBoard: state.selectedBoard?.id === boardId ? state.selectedBoard : null,
     }));
     const tasksResponse = await tasksService.getTasksByBoardId(boardId);
     if (tasksResponse.error) {
-      set({ error: tasksResponse.error, isLoading: false });
+      set({ error: tasksResponse.error });
       return;
     }
     if (!tasksResponse.data) {
-      set({ error: "Empty task response", isLoading: false });
+      set({ error: "Empty task response" });
       return;
     }
     set({
       boardTasks: tasksResponse.data,
-      isLoading: false,
     });
   },
   async createBoard(input) {

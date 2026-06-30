@@ -27,6 +27,9 @@ export function AIInput({ isLoading, onSubmitPrompt }: AIInputProps): JSX.Elemen
   return (
     <form className="space-y-3" onSubmit={onSubmit}>
       <Textarea placeholder="Describe your project and request structured tasks..." {...form.register("prompt")} />
+      {form.formState.errors.prompt?.message ? (
+        <p className="text-xs text-destructive">{form.formState.errors.prompt.message}</p>
+      ) : null}
       <Button type="submit" disabled={isLoading}>
         {isLoading ? "Generating..." : "Generate Tasks"}
       </Button>
